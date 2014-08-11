@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.eitetu.minecraft.server.MinecraftServer;
+import com.eitetu.minecraft.server.authlib.Agent;
 import com.eitetu.minecraft.server.authlib.GameProfile;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Iterators;
@@ -51,15 +52,15 @@ public class UserCache {
 		b();
 	}
 
-	private static GameProfile a(com.eitetu.minecraft.server.MinecraftServer minecraftServer,
+	private static GameProfile a(MinecraftServer minecraftServer,
 			String paramString) {
 		GameProfile[] gameProfiles = new GameProfile[1];
 		GameProfileLookup gameProfileLookup = new GameProfileLookup(gameProfiles);
 
-		paramMinecraftServer.getGameProfileRepository().findProfilesByNames(
+		minecraftServer.getGameProfileRepository().findProfilesByNames(
 				new String[] { paramString }, Agent.MINECRAFT,
-				localGameProfileLookup);
-		if ((!(paramMinecraftServer.getOnlineMode()))
+				gameProfileLookup);
+		if ((!(minecraftServer.getOnlineMode()))
 				&& (arrayOfGameProfile[0] == null)) {
 			UUID localUUID = EntityHuman.a(new GameProfile(null, paramString));
 			GameProfile localGameProfile = new GameProfile(localUUID,
