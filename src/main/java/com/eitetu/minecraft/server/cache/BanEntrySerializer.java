@@ -15,6 +15,10 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
 class BanEntrySerializer implements JsonDeserializer<UserCacheEntry>, JsonSerializer<UserCacheEntry> {
+	public BanEntrySerializer(UserCache userCache, Object obj) {
+
+	}
+
 	public JsonElement serialize(UserCacheEntry userCacheEntry, Type paramType, JsonSerializationContext paramJsonSerializationContext) {
 		JsonObject localJsonObject = new JsonObject();
 		localJsonObject.addProperty("name", userCacheEntry.getGameProfile().getName());
@@ -56,4 +60,5 @@ class BanEntrySerializer implements JsonDeserializer<UserCacheEntry>, JsonSerial
 		}
 		return null;
 	}
+
 }

@@ -19,6 +19,7 @@ import java.util.UUID;
 import com.eitetu.minecraft.server.MinecraftServer;
 import com.eitetu.minecraft.server.authlib.Agent;
 import com.eitetu.minecraft.server.authlib.GameProfile;
+import com.eitetu.minecraft.server.server.EntityHuman;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
@@ -31,13 +32,13 @@ import org.apache.commons.io.IOUtils;
 
 public class UserCache {
 	public static final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
-	private final Map c = Maps.newHashMap();
-	private final Map d = Maps.newHashMap();
-	private final LinkedList e = Lists.newLinkedList();
+	private final Map<String, UserCacheEntry> nameByUserCacheEntry = Maps.newHashMap();
+	private final Map<UUID, UserCacheEntry> UUIDByUserCacheEntry = Maps.newHashMap();
+	private final LinkedList<GameProfile> gameProfiles = Lists.newLinkedList();
 	private final MinecraftServer minecraftServer;
 	protected final Gson gson;
 	private final File file;
-	private static final ParameterizedType h = new UserCacheEntryType();
+	private static final ParameterizedType userCacheEntryType = new UserCacheEntryType();
 
 	public UserCache(MinecraftServer minecraftServer, File file) {
 		this.minecraftServer = minecraftServer;
@@ -52,30 +53,25 @@ public class UserCache {
 		b();
 	}
 
-	private static GameProfile a(MinecraftServer minecraftServer,
-			String paramString) {
+	private static GameProfile a(MinecraftServer minecraftServer, String name) {
 		GameProfile[] gameProfiles = new GameProfile[1];
 		GameProfileLookup gameProfileLookup = new GameProfileLookup(gameProfiles);
 
-		minecraftServer.getGameProfileRepository().findProfilesByNames(
-				new String[] { paramString }, Agent.MINECRAFT,
-				gameProfileLookup);
-		if ((!(minecraftServer.getOnlineMode()))
-				&& (arrayOfGameProfile[0] == null)) {
-			UUID localUUID = EntityHuman.a(new GameProfile(null, paramString));
-			GameProfile localGameProfile = new GameProfile(localUUID,
-					paramString);
-			localGameProfileLookup.onProfileLookupSucceeded(localGameProfile);
+		minecraftServer.getGameProfileRepository().findProfilesByNames(new String[] { name }, Agent.MINECRAFT, gameProfileLookup);
+		if ((!(minecraftServer.getOnlineMode())) && (gameProfiles[0] == null)) {
+			UUID uuid = EntityHuman.a(new GameProfile(null, name));
+			GameProfile gameProfile = new GameProfile(uuid, name);
+			gameProfileLookup.onProfileLookupSucceeded(gameProfile);
 		}
-		return arrayOfGameProfile[0];
+		return gameProfiles[0];
 	}
 
-	public void a(GameProfile paramGameProfile) {
-		a(paramGameProfile, null);
+	public void updateGameProfile(GameProfile gameProfile) {
+		updateGameProfile(gameProfile, null);
 	}
 
-	private void a(GameProfile gameProfile, Date date) {
-		UUID localUUID = gameProfile.getId();
+	private void updateGameProfile(GameProfile gameProfile, Date date) {
+		UUID uuid = gameProfile.getId();
 		if (date == null) {
 			Calendar calendar = Calendar.getInstance();
 			calendar.setTime(new Date());
@@ -85,22 +81,19 @@ public class UserCache {
 
 		String name = gameProfile.getName().toLowerCase(Locale.ROOT);
 
-		UserCacheEntry userCacheEntry = new UserCacheEntry(this, gameProfile, date, null);
+		UserCacheEntry newUserCacheEntry = new UserCacheEntry(this, gameProfile, date);
 
-		synchronized (this.e) {
-			if (this.d.containsKey(localUUID)) {
-				UserCacheEntry localUserCacheEntry2 = (UserCacheEntry) this.d
-						.get(localUUID);
-				this.c.remove(localUserCacheEntry2.a().getName()
-						.toLowerCase(Locale.ROOT));
-				this.c.put(paramGameProfile.getName().toLowerCase(Locale.ROOT),
-						localUserCacheEntry1);
-				this.e.remove(paramGameProfile);
+		synchronized (this.gameProfiles) {
+			if (this.UUIDByUserCacheEntry.containsKey(uuid)) {
+				UserCacheEntry oldUserCacheEntry = this.UUIDByUserCacheEntry.get(uuid);
+				this.nameByUserCacheEntry.remove(oldUserCacheEntry.getGameProfile().getName().toLowerCase(Locale.ROOT));
+				this.nameByUserCacheEntry.put(gameProfile.getName().toLowerCase(Locale.ROOT), newUserCacheEntry);
+				this.gameProfiles.remove(gameProfile);
 			} else {
-				this.d.put(localUUID, localUserCacheEntry1);
-				this.c.put(localObject1, localUserCacheEntry1);
+				this.UUIDByUserCacheEntry.put(uuid, newUserCacheEntry);
+				this.nameByUserCacheEntry.put(name, newUserCacheEntry);
 			}
-			this.e.addFirst(paramGameProfile);
+			this.gameProfiles.addFirst(gameProfile);
 		}
 	}
 
@@ -109,7 +102,7 @@ public class UserCache {
     UserCacheEntry localUserCacheEntry = (UserCacheEntry)this.c.get(str);
 
     if ((localUserCacheEntry != null) && (new Date().getTime() >= UserCacheEntry.a(localUserCacheEntry).getTime())) {
-      this.d.remove(localUserCacheEntry.a().getId());
+      this.UUIDByUserCacheEntry.remove(localUserCacheEntry.a().getId());
       this.c.remove(localUserCacheEntry.a().getName().toLowerCase(Locale.ROOT));
       synchronized (this.e) {
         this.e.remove(localUserCacheEntry.a());
@@ -142,13 +135,13 @@ public class UserCache {
 	}
 
 	public GameProfile a(UUID paramUUID) {
-		UserCacheEntry localUserCacheEntry = (UserCacheEntry) this.d
+		UserCacheEntry localUserCacheEntry = (UserCacheEntry) this.userCacheEntryMap
 				.get(paramUUID);
 		return ((localUserCacheEntry == null) ? null : localUserCacheEntry.a());
 	}
 
 	private UserCacheEntry b(UUID paramUUID) {
-		UserCacheEntry localUserCacheEntry = (UserCacheEntry) this.d
+		UserCacheEntry localUserCacheEntry = (UserCacheEntry) this.userCacheEntryMap
 				.get(paramUUID);
 		if (localUserCacheEntry != null) {
 			GameProfile localGameProfile = localUserCacheEntry.a();
@@ -173,7 +166,7 @@ public class UserCache {
     }
     if (localList != null) {
       this.c.clear();
-      this.d.clear();
+      this.UUIDByUserCacheEntry.clear();
       synchronized (this.e) {
         this.e.clear();
       }

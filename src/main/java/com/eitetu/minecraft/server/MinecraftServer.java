@@ -37,19 +37,20 @@ public class MinecraftServer implements ICommandListener, Runnable, IMojangStati
 	private PlayerList players;
 	private String motd;
 
+	private final OptionSet options;
+
 	public MinecraftServer(OptionSet options, Proxy proxy) { // Eitetu-CraftBukkit Server - signature file -> OptionSet
 		this.userCache = new UserCache(this, a);
 
 		instance = this;
-		proxy = proxy;
+		this.proxy = proxy;
 
 		// this.universe = file1; // CraftBukkit
 		this.serverConnection = new ServerConnection(this);
 		this.commandDispatcher = new CommandDispatcher();
 		// this.convertable = new WorldLoaderServer(file1); // CraftBukkit -
 		// moved to DedicatedServer.init
-		this.T = new YggdrasilAuthenticationService(proxy, UUID.randomUUID()
-				.toString());
+		this.T = new YggdrasilAuthenticationService(proxy, UUID.randomUUID().toString());
 		this.U = this.T.createMinecraftSessionService();
 		this.W = this.T.createProfileRepository();
 		// CraftBukkit start
