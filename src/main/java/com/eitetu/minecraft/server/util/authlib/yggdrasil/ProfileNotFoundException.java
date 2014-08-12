@@ -1,0 +1,20 @@
+package com.eitetu.minecraft.server.util.authlib.yggdrasil;
+
+public class ProfileNotFoundException extends RuntimeException {
+	private static final long serialVersionUID = 1L;
+
+	public ProfileNotFoundException() {
+	}
+
+	public ProfileNotFoundException(String message) {
+		super(message);
+	}
+
+	public ProfileNotFoundException(String message, Throwable cause) {
+		super(message, cause);
+	}
+
+	public ProfileNotFoundException(Throwable cause) {
+		super(cause);
+	}
+}
